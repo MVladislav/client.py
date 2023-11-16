@@ -12,6 +12,7 @@ from .clean_count import GetCleanCount, SetCleanCount
 from .clean_logs import GetCleanLogs
 from .clean_logs_v2 import GetCleanLogsV2
 from .clean_preference import GetCleanPreference, SetCleanPreference
+from .clear_map import ClearMap
 from .common import JsonCommand
 from .continuous_cleaning import GetContinuousCleaning, SetContinuousCleaning
 from .efficiency import GetEfficiencyMode, SetEfficiencyMode
@@ -50,6 +51,7 @@ __all__ = [
     "SetCleanCount",
     "GetCleanPreference",
     "SetCleanPreference",
+    "ClearMap",
     "Charge",
     "GetChargeState",
     "Clean",
@@ -111,6 +113,8 @@ _COMMANDS: list[type[JsonCommand]] = [
 
     GetCleanPreference,
     SetCleanPreference,
+
+    ClearMap,
 
     Charge,
 
