@@ -226,6 +226,11 @@ class MultimapStateEvent(EnableEvent):
 
 
 @dataclass(frozen=True)
+class OtaEvent(EnableEvent):
+    """Ota event."""
+
+
+@dataclass(frozen=True)
 class TrueDetectEvent(EnableEvent):
     """TrueDetect event."""
 
