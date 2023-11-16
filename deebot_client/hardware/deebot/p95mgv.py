@@ -3,6 +3,7 @@ from deebot_client.capabilities import (
     Capabilities,
     CapabilityClean,
     CapabilityCleanAction,
+    CapabilityCleanAutoEmpty,
     CapabilityCustomCommand,
     CapabilityEvent,
     CapabilityExecute,
@@ -15,6 +16,10 @@ from deebot_client.capabilities import (
     CapabilityStats,
 )
 from deebot_client.commands.json.advanced_mode import GetAdvancedMode, SetAdvancedMode
+from deebot_client.commands.json.auto_empty import (
+    GetAutoEmpty,
+    SetAutoEmpty,
+)
 from deebot_client.commands.json.battery import GetBattery
 from deebot_client.commands.json.carpet import (
     GetCarpetAutoFanBoost,
@@ -24,6 +29,7 @@ from deebot_client.commands.json.charge import Charge
 from deebot_client.commands.json.charge_state import GetChargeState
 from deebot_client.commands.json.clean import Clean, CleanArea, GetCleanInfo
 from deebot_client.commands.json.clean_count import GetCleanCount, SetCleanCount
+from deebot_client.commands.json.clean_logs_v2 import GetCleanLogsV2
 from deebot_client.commands.json.clean_preference import (
     GetCleanPreference,
     SetCleanPreference,
@@ -49,6 +55,7 @@ from deebot_client.commands.json.multimap_state import (
     SetMultimapState,
 )
 from deebot_client.commands.json.network import GetNetInfo
+from deebot_client.commands.json.ota import GetOta, SetOta
 from deebot_client.commands.json.play_sound import PlaySound
 from deebot_client.commands.json.pos import GetPos
 from deebot_client.commands.json.relocation import SetRelocationState
@@ -68,6 +75,7 @@ from deebot_client.events import (
     CachedMapInfoEvent,
     CarpetAutoFanBoostEvent,
     CleanCountEvent,
+    CleanLogEvent,
     CleanPreferenceEvent,
     ContinuousCleaningEvent,
     CustomCommandEvent,
@@ -82,6 +90,7 @@ from deebot_client.events import (
     MapTraceEvent,
     MultimapStateEvent,
     NetworkInfoEvent,
+    OtaEvent,
     PositionsEvent,
     ReportStatsEvent,
     RoomsEvent,
@@ -94,6 +103,7 @@ from deebot_client.events import (
     WaterAmount,
     WaterInfoEvent,
 )
+from deebot_client.events.auto_empty import AutoEmptyMode, AutoEmptyModeEvent
 from deebot_client.events.efficiency_mode import EfficiencyMode
 from deebot_client.models import StaticDeviceInfo
 from deebot_client.util import short_name
@@ -109,6 +119,17 @@ DEVICES[short_name(__name__)] = StaticDeviceInfo(
         battery=CapabilityEvent(BatteryEvent, [GetBattery()]),
         charge=CapabilityExecute(Charge),
         clean=CapabilityClean(
+            auto_empty=CapabilityCleanAutoEmpty(
+                event=AutoEmptyModeEvent,
+                get=[GetAutoEmpty()],
+                set=SetAutoEmpty,
+                types=(
+                    AutoEmptyMode.MODE_10,
+                    AutoEmptyMode.MODE_15,
+                    AutoEmptyMode.MODE_25,
+                    AutoEmptyMode.MODE_AUTO,
+                ),
+            ),
             action=CapabilityCleanAction(command=Clean, area=CleanArea),
             continuous=CapabilitySetEnable(
                 ContinuousCleaningEvent,
@@ -116,6 +137,7 @@ DEVICES[short_name(__name__)] = StaticDeviceInfo(
                 SetContinuousCleaning,
             ),
             count=CapabilitySet(CleanCountEvent, [GetCleanCount()], SetCleanCount),
+            log=CapabilityEvent(CleanLogEvent, [GetCleanLogsV2()]),
             preference=CapabilitySetEnable(
                 CleanPreferenceEvent, [GetCleanPreference()], SetCleanPreference
             ),
@@ -187,6 +209,7 @@ DEVICES[short_name(__name__)] = StaticDeviceInfo(
                     EfficiencyMode.STANDART_MODE,
                 ),
             ),
+            ota=CapabilitySetEnable(OtaEvent, [GetOta()], SetOta),
             true_detect=CapabilitySetEnable(
                 TrueDetectEvent, [GetTrueDetect()], SetTrueDetect
             ),

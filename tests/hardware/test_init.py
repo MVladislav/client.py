@@ -7,12 +7,14 @@ import pytest
 
 from deebot_client.command import Command
 from deebot_client.commands.json.advanced_mode import GetAdvancedMode
+from deebot_client.commands.json.auto_empty import GetAutoEmpty
 from deebot_client.commands.json.battery import GetBattery
 from deebot_client.commands.json.carpet import GetCarpetAutoFanBoost
 from deebot_client.commands.json.charge_state import GetChargeState
 from deebot_client.commands.json.clean import GetCleanInfo
 from deebot_client.commands.json.clean_count import GetCleanCount
 from deebot_client.commands.json.clean_logs import GetCleanLogs
+from deebot_client.commands.json.clean_logs_v2 import GetCleanLogsV2
 from deebot_client.commands.json.clean_preference import GetCleanPreference
 from deebot_client.commands.json.continuous_cleaning import GetContinuousCleaning
 from deebot_client.commands.json.efficiency import GetEfficiencyMode
@@ -22,6 +24,7 @@ from deebot_client.commands.json.life_span import GetLifeSpan
 from deebot_client.commands.json.map import GetCachedMapInfo, GetMajorMap, GetMapTrace
 from deebot_client.commands.json.multimap_state import GetMultimapState
 from deebot_client.commands.json.network import GetNetInfo
+from deebot_client.commands.json.ota import GetOta
 from deebot_client.commands.json.pos import GetPos
 from deebot_client.commands.json.stats import GetStats, GetTotalStats
 from deebot_client.commands.json.true_detect import GetTrueDetect
@@ -42,6 +45,7 @@ from deebot_client.events import (
     LifeSpan,
     LifeSpanEvent,
     MultimapStateEvent,
+    OtaEvent,
     ReportStatsEvent,
     RoomsEvent,
     StateEvent,
@@ -51,6 +55,7 @@ from deebot_client.events import (
     VoiceAssistantStateEvent,
     VolumeEvent,
 )
+from deebot_client.events.auto_empty import AutoEmptyModeEvent
 from deebot_client.events.base import Event
 from deebot_client.events.efficiency_mode import EfficiencyModeEvent
 from deebot_client.events.fan_speed import FanSpeedEvent
@@ -73,6 +78,7 @@ from deebot_client.models import StaticDeviceInfo
     [
         ("not_specified", lambda: DEVICES[FALLBACK]),
         ("yna5xi", lambda: DEVICES["yna5xi"]),
+        ("p95mgv", lambda: DEVICES["p95mgv"]),
     ],
 )
 def test_get_static_device_info(
@@ -104,8 +110,8 @@ def test_get_static_device_info(
                 LifeSpanEvent: [
                     GetLifeSpan([LifeSpan.BRUSH, LifeSpan.FILTER, LifeSpan.SIDE_BRUSH])
                 ],
-                MapChangedEvent: [],
                 MajorMapEvent: [GetMajorMap()],
+                MapChangedEvent: [],
                 MapTraceEvent: [GetMapTrace()],
                 MultimapStateEvent: [GetMultimapState()],
                 NetworkInfoEvent: [GetNetInfo()],
@@ -136,8 +142,8 @@ def test_get_static_device_info(
                 LifeSpanEvent: [
                     GetLifeSpan([LifeSpan.BRUSH, LifeSpan.FILTER, LifeSpan.SIDE_BRUSH])
                 ],
-                MapChangedEvent: [],
                 MajorMapEvent: [GetMajorMap()],
+                MapChangedEvent: [],
                 MapTraceEvent: [GetMapTrace()],
                 MultimapStateEvent: [GetMultimapState()],
                 NetworkInfoEvent: [GetNetInfo()],
@@ -155,11 +161,13 @@ def test_get_static_device_info(
             "p95mgv",
             {
                 AdvancedModeEvent: [GetAdvancedMode()],
+                AutoEmptyModeEvent: [GetAutoEmpty()],
                 AvailabilityEvent: [GetBattery(True)],
                 BatteryEvent: [GetBattery()],
                 CachedMapInfoEvent: [GetCachedMapInfo()],
                 CarpetAutoFanBoostEvent: [GetCarpetAutoFanBoost()],
                 CleanCountEvent: [GetCleanCount()],
+                CleanLogEvent: [GetCleanLogsV2()],
                 CleanPreferenceEvent: [GetCleanPreference()],
                 ContinuousCleaningEvent: [GetContinuousCleaning()],
                 CustomCommandEvent: [],
@@ -181,6 +189,7 @@ def test_get_static_device_info(
                 MapTraceEvent: [GetMapTrace()],
                 MultimapStateEvent: [GetMultimapState()],
                 NetworkInfoEvent: [GetNetInfo()],
+                OtaEvent: [GetOta()],
                 PositionsEvent: [GetPos()],
                 ReportStatsEvent: [],
                 RoomsEvent: [GetCachedMapInfo()],
