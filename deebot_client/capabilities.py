@@ -2,7 +2,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field, fields, is_dataclass
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, TypeVarTuple
 
 from deebot_client.command import Command, SetCommand
 from deebot_client.events import (
@@ -51,6 +51,7 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+_Ts = TypeVarTuple("_Ts")
 _EVENT = TypeVar("_EVENT", bound=Event)
 
 
@@ -79,10 +80,10 @@ class CapabilityEvent(Generic[_EVENT]):
 
 
 @dataclass(frozen=True)
-class CapabilitySet(CapabilityEvent[_EVENT], Generic[_EVENT, _T]):
+class CapabilitySet(CapabilityEvent[_EVENT], Generic[_EVENT, *_Ts]):
     """Capability setCommand with event."""
 
-    set: Callable[[_T], SetCommand]
+    set: Callable[[*_Ts], SetCommand]
 
 
 @dataclass(frozen=True)
@@ -105,17 +106,12 @@ class CapabilityTypes(Generic[_T]):
 
 
 @dataclass(frozen=True, kw_only=True)
-class CapabilitySetTypes(CapabilitySet[_EVENT, _T | str], CapabilityTypes[_T]):
+class CapabilitySetTypes(
+    CapabilityEvent[_EVENT], Generic[_EVENT, *_Ts, _T], CapabilityTypes[_T]
+):
     """Capability for set command and types."""
 
-
-@dataclass(frozen=True, kw_only=True)
-class CapabilityCleanAutoEmpty(
-    CapabilityEvent[AutoEmptyModeEvent], CapabilityTypes[AutoEmptyMode]
-):
-    """Capabilities for clean auto empty."""
-
-    set: Callable[[bool, AutoEmptyMode | str | None], SetCommand]
+    set: Callable[[*_Ts], SetCommand]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -130,13 +126,15 @@ class CapabilityCleanAction:
 class CapabilityClean:
     """Capabilities for clean."""
 
-    auto_empty: CapabilityCleanAutoEmpty | None = None
+    auto_empty: CapabilitySetTypes[
+        AutoEmptyModeEvent, bool, AutoEmptyMode | str | None, AutoEmptyMode
+    ] | None = None
     action: CapabilityCleanAction
     continuous: CapabilitySetEnable[ContinuousCleaningEvent]
     count: CapabilitySet[CleanCountEvent, int] | None = None
     log: CapabilityEvent[CleanLogEvent] | None = None
     preference: CapabilitySetEnable[CleanPreferenceEvent] | None = None
-    work_mode: CapabilitySetTypes[WorkModeEvent, WorkMode] | None = None
+    work_mode: CapabilitySetTypes[WorkModeEvent, WorkMode | str, WorkMode] | None = None
 
 
 @dataclass(frozen=True)
@@ -184,7 +182,8 @@ class CapabilitySettings:
     advanced_mode: CapabilitySetEnable[AdvancedModeEvent]
     carpet_auto_fan_boost: CapabilitySetEnable[CarpetAutoFanBoostEvent]
     efficiency_mode: (
-        CapabilitySetTypes[EfficiencyModeEvent, EfficiencyMode] | None
+        CapabilitySetTypes[EfficiencyModeEvent, EfficiencyMode | str, EfficiencyMode]
+        | None
     ) = None
     ota: CapabilitySetEnable[OtaEvent] | None = None
     true_detect: CapabilitySetEnable[TrueDetectEvent] | None = None
@@ -202,7 +201,7 @@ class Capabilities:
     clean: CapabilityClean
     custom: CapabilityCustomCommand[CustomCommandEvent]
     error: CapabilityEvent[ErrorEvent]
-    fan_speed: CapabilitySetTypes[FanSpeedEvent, FanSpeedLevel]
+    fan_speed: CapabilitySetTypes[FanSpeedEvent, FanSpeedLevel | str, FanSpeedLevel]
     life_span: CapabilityLifeSpan
     map: CapabilityMap | None = None
     network: CapabilityEvent[NetworkInfoEvent]
@@ -210,7 +209,7 @@ class Capabilities:
     settings: CapabilitySettings
     state: CapabilityEvent[StateEvent]
     stats: CapabilityStats
-    water: CapabilitySetTypes[WaterInfoEvent, WaterAmount]
+    water: CapabilitySetTypes[WaterInfoEvent, WaterAmount | str, WaterAmount]
 
     _events: MappingProxyType[type[Event], list[Command]] = field(init=False)
 
