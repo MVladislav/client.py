@@ -50,7 +50,7 @@ class _AuthClient:
         config: Configuration,
         account_id: str,
         password_hash: str,
-    ):
+    ) -> None:
         self._config = config
         self._account_id = account_id
         self._password_hash = password_hash
@@ -106,7 +106,7 @@ class _AuthClient:
             content_type = res.headers.get(hdrs.CONTENT_TYPE, "").lower()
             json = await res.json(content_type=content_type)
             _LOGGER.debug("got %s", json)
-            # todo better error handling # pylint: disable=fixme
+            # TODO better error handling # pylint: disable=fixme
             if json["code"] == "0000":
                 data: dict[str, Any] = json["data"]
                 return data
@@ -114,9 +114,8 @@ class _AuthClient:
                 raise InvalidAuthenticationError
 
             _LOGGER.error("call to %s failed with %s", url, json)
-            raise AuthenticationError(
-                f"failure code {json['code']} ({json['msg']}) for call {url}"
-            )
+            msg = f"failure code {json['code']} ({json['msg']}) for call {url}"
+            raise AuthenticationError(msg)
 
     async def __call_login_api(
         self, account_id: str, password_hash: str
@@ -203,9 +202,10 @@ class _AuthClient:
                 continue
 
             _LOGGER.error("call to %s failed with %s", PATH_USERS_USER, resp)
-            raise AuthenticationError(
+            msg = (
                 f"failure {resp['error']} ({resp['errno']}) for call {PATH_USERS_USER}"
             )
+            raise AuthenticationError(msg)
 
         raise AuthenticationError("failed to login with token")
 
@@ -301,7 +301,7 @@ class Authenticator:
         config: Configuration,
         account_id: str,
         password_hash: str,
-    ):
+    ) -> None:
         self._auth_client = _AuthClient(
             config,
             account_id,
@@ -316,7 +316,7 @@ class Authenticator:
         self._refresh_handle: asyncio.TimerHandle | None = None
         self._tasks: set[asyncio.Future[Any]] = set()
 
-    async def authenticate(self, force: bool = False) -> Credentials:
+    async def authenticate(self, *, force: bool = False) -> Credentials:
         """Authenticate on ecovacs servers."""
         async with self._lock:
             if (
@@ -378,7 +378,7 @@ class Authenticator:
 
             async def async_refresh() -> None:
                 try:
-                    await self.authenticate(True)
+                    await self.authenticate(force=True)
                 except Exception:  # pylint: disable=broad-except
                     _LOGGER.exception("An exception occurred during refreshing token")
 

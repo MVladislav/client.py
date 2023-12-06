@@ -96,7 +96,7 @@ def test_get_static_device_info(
             FALLBACK,
             {
                 AdvancedModeEvent: [GetAdvancedMode()],
-                AvailabilityEvent: [GetBattery(True)],
+                AvailabilityEvent: [GetBattery(is_available_check=True)],
                 BatteryEvent: [GetBattery()],
                 CachedMapInfoEvent: [GetCachedMapInfo()],
                 CarpetAutoFanBoostEvent: [GetCarpetAutoFanBoost()],
@@ -130,7 +130,7 @@ def test_get_static_device_info(
             "yna5xi",
             {
                 AdvancedModeEvent: [GetAdvancedMode()],
-                AvailabilityEvent: [GetBattery(True)],
+                AvailabilityEvent: [GetBattery(is_available_check=True)],
                 BatteryEvent: [GetBattery()],
                 CachedMapInfoEvent: [GetCachedMapInfo()],
                 CarpetAutoFanBoostEvent: [GetCarpetAutoFanBoost()],
