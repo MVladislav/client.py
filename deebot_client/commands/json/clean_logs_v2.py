@@ -45,11 +45,6 @@ class GetCleanLogsV2(JsonCommand):
                     "resource": device_info.resource,
                 }
             ),
-            # "country": "DE",
-            # "lang": "EN",
-            # "defaultLang": "zh_cn",
-            # "before": "1698540667000",
-            # "et1": "1698540667778",
         }
 
         return await authenticator.post_authenticated(

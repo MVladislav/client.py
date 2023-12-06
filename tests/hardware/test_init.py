@@ -162,7 +162,7 @@ def test_get_static_device_info(
             {
                 AdvancedModeEvent: [GetAdvancedMode()],
                 AutoEmptyModeEvent: [GetAutoEmpty()],
-                AvailabilityEvent: [GetBattery(True)],
+                AvailabilityEvent: [GetBattery(is_available_check=True)],
                 BatteryEvent: [GetBattery()],
                 CachedMapInfoEvent: [GetCachedMapInfo()],
                 CarpetAutoFanBoostEvent: [GetCarpetAutoFanBoost()],

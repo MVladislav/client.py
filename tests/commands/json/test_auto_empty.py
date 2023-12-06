@@ -109,12 +109,12 @@ async def test_SetAutoEmpty(
         (
             (None, AutoEmptyMode.MODE_AUTO),
             {"enable": 0, "frequency": "auto"},
-            AutoEmptyModeEvent(False, AutoEmptyMode.MODE_AUTO),
+            AutoEmptyModeEvent(enable=False, mode=AutoEmptyMode.MODE_AUTO),
         ),
         (
             (None, None),
             {"enable": 0, "frequency": "auto"},
-            AutoEmptyModeEvent(False, AutoEmptyMode.MODE_AUTO),
+            AutoEmptyModeEvent(enable=False, mode=AutoEmptyMode.MODE_AUTO),
         ),
     ],
 )
