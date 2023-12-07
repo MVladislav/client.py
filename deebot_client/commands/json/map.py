@@ -22,6 +22,13 @@ class GetCachedMapInfo(JsonCommandWithMessageHandling, MessageBodyDataDict):
     """Get cached map info command."""
 
     name = "getCachedMapInfo"
+    get_map_set_version: int = 1
+
+    def __init__(
+        self, args: dict[str, Any] | list[Any] | None = None, version: int = 1
+    ) -> None:
+        self.get_map_set_version = version
+        super().__init__(args)
 
     @classmethod
     def _handle_body_data_dict(
@@ -55,7 +62,9 @@ class GetCachedMapInfo(JsonCommandWithMessageHandling, MessageBodyDataDict):
             return CommandResult(
                 result.state,
                 result.args,
-                [GetMapSet(result.args["map_id"], entry) for entry in MapSetType],
+                [GetMapSetV2(result.args["map_id"], entry) for entry in MapSetType]
+                if self.get_map_set_version == 2
+                else [GetMapSet(result.args["map_id"], entry) for entry in MapSetType],
             )
 
         return result
@@ -159,6 +168,12 @@ class GetMapSet(JsonCommandWithMessageHandling, MessageBodyDataDict):
             return CommandResult(result.state, result.args, commands)
 
         return result
+
+
+class GetMapSetV2(GetMapSet):
+    """Get map set v2 command."""
+
+    name = "getMapSet_V2"
 
 
 class GetMapSubSet(JsonCommandWithMessageHandling, MessageBodyDataDict):
