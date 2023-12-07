@@ -3,6 +3,7 @@ from deebot_client.capabilities import (
     Capabilities,
     CapabilityClean,
     CapabilityCleanAction,
+    CapabilityCleanAutoEmpty,
     CapabilityCustomCommand,
     CapabilityEvent,
     CapabilityExecute,
@@ -118,7 +119,7 @@ DEVICES[short_name(__name__)] = StaticDeviceInfo(
         battery=CapabilityEvent(BatteryEvent, [GetBattery()]),
         charge=CapabilityExecute(Charge),
         clean=CapabilityClean(
-            auto_empty=CapabilitySetTypes(
+            auto_empty=CapabilityCleanAutoEmpty(
                 event=AutoEmptyModeEvent,
                 get=[GetAutoEmpty()],
                 set=SetAutoEmpty,
