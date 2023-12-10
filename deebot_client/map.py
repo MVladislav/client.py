@@ -56,7 +56,8 @@ _COLORS = {
 }
 
 
-def _decompress_7z_base64_data(data: str) -> bytes:
+def decompress_7z_base64_data(data: str) -> bytes:
+    """Decomporess base64 decoded 7z compressed string."""
     _LOGGER.debug("[decompress7zBase64Data] Begin")
     final_array = bytearray()
 
@@ -191,7 +192,7 @@ class Map:
 
     def _update_trace_points(self, data: str) -> None:
         _LOGGER.debug("[_update_trace_points] Begin")
-        trace_points = _decompress_7z_base64_data(data)
+        trace_points = decompress_7z_base64_data(data)
 
         for i in range(0, len(trace_points), 5):
             byte_position_x = struct.unpack("<h", trace_points[i : i + 2])
@@ -425,7 +426,7 @@ class MapPiece:
 
     def update_points(self, base64_data: str) -> None:
         """Add map piece points."""
-        decoded = _decompress_7z_base64_data(base64_data)
+        decoded = decompress_7z_base64_data(base64_data)
         old_crc32 = self._crc32
         self._crc32 = zlib.crc32(decoded)
 

@@ -1,4 +1,5 @@
 """Maps commands."""
+import json
 from types import MappingProxyType
 from typing import Any
 
@@ -13,6 +14,7 @@ from deebot_client.events import (
     MinorMapEvent,
 )
 from deebot_client.events.map import CachedMapInfoEvent
+from deebot_client.map import decompress_7z_base64_data
 from deebot_client.message import HandlingResult, HandlingState, MessageBodyDataDict
 
 from .common import JsonCommandWithMessageHandling
@@ -170,10 +172,80 @@ class GetMapSet(JsonCommandWithMessageHandling, MessageBodyDataDict):
         return result
 
 
-class GetMapSetV2(GetMapSet):
+class GetMapSetV2(JsonCommandWithMessageHandling, MessageBodyDataDict):
     """Get map set v2 command."""
 
+    _ARGS_ID = "id"
+    _ARGS_SET_ID = "set_id"
+    _ARGS_TYPE = "type"
+    _ARGS_SUBSETS = "subsets"
+
     name = "getMapSet_V2"
+
+    def __init__(
+        self,
+        mid: str,
+        type: (  # pylint: disable=redefined-builtin
+            MapSetType | str
+        ) = MapSetType.ROOMS,
+    ) -> None:
+        if isinstance(type, MapSetType):
+            type = type.value
+
+        super().__init__({"mid": mid, "type": type})
+
+    @classmethod
+    def _handle_body_data_dict(
+        cls, event_bus: EventBus, data: dict[str, Any]
+    ) -> HandlingResult:
+        """Handle message->body->data and notify the correct event subscribers.
+
+        :return: A message response
+        """
+        # - mssid?
+        # - room name
+        # - room number
+        # - number with '-'
+        # - ?
+        # - ?
+        # - ?
+        # - number with '-' (count - speed - water)
+        # - settingName1
+        subset_decoded: list[list[str]] = json.loads(
+            decompress_7z_base64_data(data["subsets"]).decode()
+        )
+        subsets = [int(subset[0]) for subset in subset_decoded]
+        args = {
+            cls._ARGS_ID: data["mid"],
+            cls._ARGS_SET_ID: data.get("msid", None),
+            cls._ARGS_TYPE: data["type"],
+            cls._ARGS_SUBSETS: subsets,
+        }
+
+        event_bus.notify(MapSetEvent(MapSetType(data["type"]), subsets))
+        return HandlingResult(HandlingState.SUCCESS, args)
+
+    def _handle_response(
+        self, event_bus: EventBus, response: dict[str, Any]
+    ) -> CommandResult:
+        """Handle response from a command.
+
+        :return: A message response
+        """
+        result = super()._handle_response(event_bus, response)
+        if result.state == HandlingState.SUCCESS and result.args:
+            commands: list[Command] = [
+                GetMapSubSet(
+                    mid=result.args[self._ARGS_ID],
+                    msid=result.args[self._ARGS_SET_ID],
+                    type=result.args[self._ARGS_TYPE],
+                    mssid=subset,
+                )
+                for subset in result.args[self._ARGS_SUBSETS]
+            ]
+            return CommandResult(result.state, result.args, commands)
+
+        return result
 
 
 class GetMapSubSet(JsonCommandWithMessageHandling, MessageBodyDataDict):
