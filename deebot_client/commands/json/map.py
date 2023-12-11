@@ -197,11 +197,11 @@ class GetMapSubSet(JsonCommandWithMessageHandling, MessageBodyDataDict):
                 name = cls._ROOM_NUM_TO_NAME.get(subtype, None)
 
             coordinates: str | None = None
-            try:
+            if data.get("compress", 0) == 1:
+                _LOGGER.info("==> coordinates are compressed...")
                 # NOTE: newer bot's return coordinates as base64 decoded string
                 coordinates = decompress_7z_base64_data(data["value"]).decode()
-            except Exception as e:  # pylint: disable=broad-exception-caught
-                test_msg = f"==> {data['value']} :: {e}"
+                test_msg = f"==> {coordinates}"
                 _LOGGER.info(test_msg)
 
             if coordinates is None:
