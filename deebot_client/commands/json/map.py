@@ -14,8 +14,8 @@ from deebot_client.events import (
     MinorMapEvent,
 )
 from deebot_client.events.map import CachedMapInfoEvent
-from deebot_client.map import decompress_7z_base64_data
 from deebot_client.message import HandlingResult, HandlingState, MessageBodyDataDict
+from deebot_client.util import decompress_7z_base64_data
 
 from .common import JsonCommandWithMessageHandling
 

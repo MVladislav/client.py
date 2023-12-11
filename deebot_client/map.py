@@ -6,7 +6,6 @@ from collections.abc import Callable, Coroutine
 import dataclasses
 from datetime import UTC, datetime
 from io import BytesIO
-import lzma
 import math
 import struct
 from typing import Any, Final
@@ -36,7 +35,13 @@ from .events import (
 from .exceptions import MapError
 from .logging_filter import get_logger
 from .models import Room
-from .util import OnChangedDict, OnChangedList, cancel, create_task
+from .util import (
+    OnChangedDict,
+    OnChangedList,
+    cancel,
+    create_task,
+    decompress_7z_base64_data,
+)
 
 _LOGGER = get_logger(__name__)
 _PIXEL_WIDTH = 50
@@ -54,28 +59,6 @@ _COLORS = {
     MapSetType.VIRTUAL_WALLS: "#FF0000",
     MapSetType.NO_MOP_ZONES: "#FFA500",
 }
-
-
-def decompress_7z_base64_data(data: str) -> bytes:
-    """Decomporess base64 decoded 7z compressed string."""
-    _LOGGER.debug("[decompress7zBase64Data] Begin")
-    final_array = bytearray()
-
-    # Decode Base64
-    decoded = base64.b64decode(data)
-
-    i = 0
-    for idx in decoded:
-        if i == 8:
-            final_array += b"\x00\x00\x00\x00"
-        final_array.append(idx)
-        i += 1
-
-    dec = lzma.LZMADecompressor(lzma.FORMAT_AUTO, None, None)
-    decompressed_data = dec.decompress(final_array)
-
-    _LOGGER.debug("[decompress7zBase64Data] Done")
-    return decompressed_data
 
 
 def _calc_value(value: int, min_value: int, max_value: int) -> int:
