@@ -106,6 +106,8 @@ def _draw_subset(
     image_box: tuple[int, int, int, int] | None,
 ) -> None:
     coordinates_ = ast.literal_eval(subset.coordinates)
+    test_info = f"==> {coordinates_}"
+    _LOGGER.info(test_info)
     points: list[tuple[int, int]] = [
         _calc_point(coordinates_[i], coordinates_[i + 1], image_box)
         for i in range(0, len(coordinates_), 2)
