@@ -1,5 +1,4 @@
 """Maps commands."""
-from contextlib import suppress
 from types import MappingProxyType
 from typing import Any
 
@@ -14,10 +13,13 @@ from deebot_client.events import (
     MinorMapEvent,
 )
 from deebot_client.events.map import CachedMapInfoEvent
+from deebot_client.logging_filter import get_logger
 from deebot_client.message import HandlingResult, HandlingState, MessageBodyDataDict
 from deebot_client.util import decompress_7z_base64_data
 
 from .common import JsonCommandWithMessageHandling
+
+_LOGGER = get_logger(__name__)
 
 
 class GetCachedMapInfo(JsonCommandWithMessageHandling, MessageBodyDataDict):
@@ -195,9 +197,13 @@ class GetMapSubSet(JsonCommandWithMessageHandling, MessageBodyDataDict):
                 name = cls._ROOM_NUM_TO_NAME.get(subtype, None)
 
             coordinates: str | None = None
-            with suppress(Exception):
+            try:
                 # NOTE: newer bot's return coordinates as base64 decoded string
                 coordinates = decompress_7z_base64_data(data["value"]).decode()
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                test_msg = f"==> {data['value']} :: {e}"
+                _LOGGER.info(test_msg)
+
             if coordinates is None:
                 # NOTE: older bot's return coordinates direct as comma separated list
                 coordinates = data["value"]
