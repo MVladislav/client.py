@@ -1,4 +1,5 @@
 """Maps commands."""
+import json
 from types import MappingProxyType
 from typing import Any
 
@@ -23,6 +24,13 @@ class GetCachedMapInfo(JsonCommandWithMessageHandling, MessageBodyDataDict):
     """Get cached map info command."""
 
     name = "getCachedMapInfo"
+    get_map_set_version: int = 1
+
+    def __init__(
+        self, args: dict[str, Any] | list[Any] | None = None, version: int = 1
+    ) -> None:
+        self.get_map_set_version = version
+        super().__init__(args)
 
     @classmethod
     def _handle_body_data_dict(
@@ -56,7 +64,9 @@ class GetCachedMapInfo(JsonCommandWithMessageHandling, MessageBodyDataDict):
             return CommandResult(
                 result.state,
                 result.args,
-                [GetMapSet(result.args["map_id"], entry) for entry in MapSetType],
+                [GetMapSetV2(result.args["map_id"], entry) for entry in MapSetType]
+                if self.get_map_set_version == 2
+                else [GetMapSet(result.args["map_id"], entry) for entry in MapSetType],
             )
 
         return result
@@ -166,7 +176,7 @@ class GetMapSubSet(JsonCommandWithMessageHandling, MessageBodyDataDict):
             type = type.value
 
         if msid is None and type == MapSetType.ROOMS.value:
-            raise ValueError("msid is required when type='vw'")
+            raise ValueError("msid is required when type='ar'")
 
         super().__init__(
             {
@@ -211,6 +221,55 @@ class GetMapSubSet(JsonCommandWithMessageHandling, MessageBodyDataDict):
             )
 
             return HandlingResult.success()
+
+        return HandlingResult.analyse()
+
+
+class GetMapSetV2(JsonCommandWithMessageHandling, MessageBodyDataDict):
+    """Get map set v2 command."""
+
+    name = "getMapSet_V2"
+
+    def __init__(
+        self,
+        mid: str,
+        type: (  # pylint: disable=redefined-builtin
+            MapSetType | str
+        ) = MapSetType.ROOMS,
+    ) -> None:
+        if isinstance(type, MapSetType):
+            type = type.value
+
+        super().__init__({"mid": mid, "type": type})
+
+    @classmethod
+    def _handle_body_data_dict(
+        cls, event_bus: EventBus, data: dict[str, Any]
+    ) -> HandlingResult:
+        """Handle message->body->data and notify the correct event subscribers.
+
+        :return: A message response
+        """
+        if MapSetType.has_value(data["type"]):
+            subsets: list[list[str]] = json.loads(
+                decompress_7z_base64_data(data["subsets"]).decode()
+            )
+            # NOTE: MapSetType.ROOMS is here ignore for now, to be checked if it is needed
+
+            if data["type"] in (MapSetType.VIRTUAL_WALLS, MapSetType.NO_MOP_ZONES):
+                for subset in subsets:
+                    mssid = subset[0]
+                    coordinates = str(subset[1:])
+
+                    event_bus.notify(
+                        MapSubsetEvent(
+                            id=int(mssid),
+                            type=MapSetType(data["type"]),
+                            coordinates=coordinates,
+                        )
+                    )
+
+                return HandlingResult.success()
 
         return HandlingResult.analyse()
 

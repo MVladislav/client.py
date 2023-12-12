@@ -51,10 +51,21 @@ _POSITION_PNG = {
 }
 _OFFSET = 400
 _TRACE_MAP = "trace_map"
+_COLOR_LIST_EXCLUDE = [0x00]
+_COLOR_LIST_INCLUDE = [
+    0x01,  # 1
+    0x02,  # 2
+    0x03,  # 3
+    0x04,  # 4
+    0x05,  # 5
+]
+_COLOR_FLOOR = "#badaff"
 _COLORS = {
-    0x01: "#badaff",  # floor
+    0x01: _COLOR_FLOOR,  # floor
     0x02: "#4e96e2",  # wall
     0x03: "#1a81ed",  # carpet
+    0x04: "#dee9fb",  # not scanned space
+    0x05: "#edf3fb",  # possible obstacle
     _TRACE_MAP: "#FFFFFF",
     MapSetType.VIRTUAL_WALLS: "#FF0000",
     MapSetType.NO_MOP_ZONES: "#FFA500",
@@ -106,8 +117,6 @@ def _draw_subset(
     image_box: tuple[int, int, int, int] | None,
 ) -> None:
     coordinates_ = ast.literal_eval(subset.coordinates)
-    test_info = f"==> {coordinates_}"
-    _LOGGER.info(test_info)
     points: list[tuple[int, int]] = [
         _calc_point(coordinates_[i], coordinates_[i + 1], image_box)
         for i in range(0, len(coordinates_), 2)
@@ -220,8 +229,13 @@ class Map:
                                 point_y,
                             )
                             raise MapError("Map Limit reached!")
-                        if pixel_type in [0x01, 0x02, 0x03]:
+                        if pixel_type in _COLOR_LIST_INCLUDE:
                             draw.point((point_x, point_y), fill=_COLORS[pixel_type])
+                        elif (
+                            pixel_type not in _COLOR_LIST_INCLUDE
+                            and pixel_type not in _COLOR_LIST_EXCLUDE
+                        ):
+                            draw.point((point_x, point_y), fill=_COLOR_FLOOR)
 
     def enable(self) -> None:
         """Enable map."""
