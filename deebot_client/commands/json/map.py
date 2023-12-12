@@ -24,6 +24,7 @@ class GetCachedMapInfo(JsonCommandWithMessageHandling, MessageBodyDataDict):
     """Get cached map info command."""
 
     name = "getCachedMapInfo"
+    # version definition for using type of getMapSet v1 or v2
     get_map_set_version: int = 1
 
     def __init__(
@@ -64,6 +65,7 @@ class GetCachedMapInfo(JsonCommandWithMessageHandling, MessageBodyDataDict):
             return CommandResult(
                 result.state,
                 result.args,
+                # an if check for getmapset, as newer bot use different api version
                 [GetMapSetV2(result.args["map_id"], entry) for entry in MapSetType]
                 if self.get_map_set_version == 2
                 else [GetMapSet(result.args["map_id"], entry) for entry in MapSetType],
@@ -251,15 +253,17 @@ class GetMapSetV2(JsonCommandWithMessageHandling, MessageBodyDataDict):
         :return: A message response
         """
         if MapSetType.has_value(data["type"]):
+            # subset is based64 7z compressed
             subsets: list[list[str]] = json.loads(
                 decompress_7z_base64_data(data["subsets"]).decode()
             )
-            # NOTE: MapSetType.ROOMS is here ignore for now, to be checked if it is needed
+            # NOTE: MapSetType.ROOMS is here ignored for now, to be checked if it is needed
 
+            # virtual walls and no map zones are same handled
             if data["type"] in (MapSetType.VIRTUAL_WALLS, MapSetType.NO_MOP_ZONES):
                 for subset in subsets:
-                    mssid = subset[0]
-                    coordinates = str(subset[1:])
+                    mssid = subset[0]  # first entry in list is mssid
+                    coordinates = str(subset[1:])  # all other in list are coordinates
 
                     event_bus.notify(
                         MapSubsetEvent(
