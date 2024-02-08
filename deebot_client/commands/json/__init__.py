@@ -1,4 +1,8 @@
 """Json commands module."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from deebot_client.command import Command, CommandMqttP2P
 
 from .advanced_mode import GetAdvancedMode, SetAdvancedMode
@@ -13,7 +17,6 @@ from .clean_logs import GetCleanLogs
 from .clean_logs_v2 import GetCleanLogsV2
 from .clean_preference import GetCleanPreference, SetCleanPreference
 from .clear_map import ClearMap
-from .common import JsonCommand
 from .continuous_cleaning import GetContinuousCleaning, SetContinuousCleaning
 from .efficiency import GetEfficiencyMode, SetEfficiencyMode
 from .error import GetError
@@ -35,11 +38,15 @@ from .play_sound import PlaySound
 from .pos import GetPos
 from .relocation import SetRelocationState
 from .stats import GetStats, GetTotalStats
+from .sweep_mode import GetSweepMode, SetSweepMode
 from .true_detect import GetTrueDetect, SetTrueDetect
 from .voice_assistant_state import GetVoiceAssistantState, SetVoiceAssistantState
 from .volume import GetVolume, SetVolume
 from .water_info import GetWaterInfo, SetWaterInfo
 from .work_mode import GetWorkMode, SetWorkMode
+
+if TYPE_CHECKING:
+    from .common import JsonCommand
 
 __all__ = [
     "GetAdvancedMode",
@@ -86,6 +93,8 @@ __all__ = [
     "GetPos",
     "SetRelocationState",
     "GetStats",
+    "GetSweepMode",
+    "SetSweepMode",
     "GetTotalStats",
     "GetTrueDetect",
     "SetTrueDetect",
@@ -167,6 +176,9 @@ _COMMANDS: list[type[JsonCommand]] = [
     GetPos,
 
     SetRelocationState,
+
+    GetSweepMode,
+    SetSweepMode,
 
     GetStats,
     GetTotalStats,
