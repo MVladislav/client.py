@@ -31,7 +31,6 @@ from deebot_client.commands.json.charge import Charge
 from deebot_client.commands.json.charge_state import GetChargeState
 from deebot_client.commands.json.clean import Clean, CleanArea, GetCleanInfo
 from deebot_client.commands.json.clean_count import GetCleanCount, SetCleanCount
-from deebot_client.commands.json.clean_logs_v2 import GetCleanLogsV2
 from deebot_client.commands.json.clean_preference import (
     GetCleanPreference,
     SetCleanPreference,
@@ -75,7 +74,6 @@ from deebot_client.events import (
     CachedMapInfoEvent,
     CarpetAutoFanBoostEvent,
     CleanCountEvent,
-    CleanLogEvent,
     CleanPreferenceEvent,
     ContinuousCleaningEvent,
     CustomCommandEvent,
@@ -139,7 +137,6 @@ DEVICES[short_name(__name__)] = StaticDeviceInfo(
                 SetContinuousCleaning,
             ),
             count=CapabilitySet(CleanCountEvent, [GetCleanCount()], SetCleanCount),
-            log=CapabilityEvent(CleanLogEvent, [GetCleanLogsV2()]),
             preference=CapabilitySetEnable(
                 CleanPreferenceEvent, [GetCleanPreference()], SetCleanPreference
             ),

@@ -13,7 +13,6 @@ from deebot_client.commands.json.charge_state import GetChargeState
 from deebot_client.commands.json.clean import GetCleanInfo
 from deebot_client.commands.json.clean_count import GetCleanCount
 from deebot_client.commands.json.clean_logs import GetCleanLogs
-from deebot_client.commands.json.clean_logs_v2 import GetCleanLogsV2
 from deebot_client.commands.json.clean_preference import GetCleanPreference
 from deebot_client.commands.json.continuous_cleaning import GetContinuousCleaning
 from deebot_client.commands.json.efficiency import GetEfficiencyMode
@@ -172,7 +171,6 @@ def test_get_static_device_info(
                 CachedMapInfoEvent: [GetCachedMapInfo()],
                 CarpetAutoFanBoostEvent: [GetCarpetAutoFanBoost()],
                 CleanCountEvent: [GetCleanCount()],
-                CleanLogEvent: [GetCleanLogsV2()],
                 CleanPreferenceEvent: [GetCleanPreference()],
                 ContinuousCleaningEvent: [GetContinuousCleaning()],
                 CustomCommandEvent: [],

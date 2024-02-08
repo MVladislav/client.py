@@ -14,7 +14,6 @@ from .charge_state import GetChargeState
 from .clean import Clean, CleanArea, GetCleanInfo
 from .clean_count import GetCleanCount, SetCleanCount
 from .clean_logs import GetCleanLogs
-from .clean_logs_v2 import GetCleanLogsV2
 from .clean_preference import GetCleanPreference, SetCleanPreference
 from .clear_map import ClearMap
 from .continuous_cleaning import GetContinuousCleaning, SetContinuousCleaning
@@ -67,7 +66,6 @@ __all__ = [
     "CleanArea",
     "GetCleanInfo",
     "GetCleanLogs",
-    "GetCleanLogsV2",
     "GetContinuousCleaning",
     "SetContinuousCleaning",
     "GetEfficiencyMode",
@@ -139,7 +137,6 @@ _COMMANDS: list[type[JsonCommand]] = [
     GetCleanInfo,
 
     GetCleanLogs,
-    GetCleanLogsV2,
 
     GetContinuousCleaning,
     SetContinuousCleaning,
