@@ -314,7 +314,7 @@ class GetMapSetV2(JsonCommandWithMessageHandling, MessageBodyDataDict):
                 {
                     "id": int(subset[0]),  # room id
                     "name": subset[1]
-                    if not subset[0] and subset[0] != " "
+                    if subset[1] and subset[1] != " "
                     else "Default",  # room name
                     # subset[2] not sure what the value is for
                     # subset[3] not sure what the value is for
