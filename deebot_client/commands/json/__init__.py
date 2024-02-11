@@ -22,6 +22,7 @@ from .life_span import GetLifeSpan, ResetLifeSpan
 from .map import (
     GetCachedMapInfo,
     GetMajorMap,
+    GetMapInfoV2,
     GetMapSet,
     GetMapSetV2,
     GetMapSubSet,
@@ -71,6 +72,7 @@ __all__ = [
     "ResetLifeSpan",
     "GetCachedMapInfo",
     "GetMajorMap",
+    "GetMapInfoV2",
     "GetMapSet",
     "GetMapSetV2",
     "GetMapSubSet",
@@ -141,6 +143,7 @@ _COMMANDS: list[type[JsonCommand]] = [
 
     GetCachedMapInfo,
     GetMajorMap,
+    GetMapInfoV2,
     GetMapSet,
     GetMapSetV2,
     GetMapSubSet,

@@ -16,7 +16,7 @@ import zlib
 from PIL import Image, ImageColor, ImageOps, ImagePalette
 import svg
 
-from deebot_client.events.map import CachedMapInfoEvent, MapChangedEvent
+from deebot_client.events.map import CachedMapInfoEvent, MapChangedEvent, MapInfoEvent
 
 from .commands.json import GetMinorMap
 from .events import (
@@ -118,19 +118,22 @@ _POSITIONS_SVG = {
 
 _OFFSET = 400
 _TRACE_MAP = "trace_map"
+_ROOM_LAYOUT = "room_layout"
 _COLORS = {
     _TRACE_MAP: "#fff",
+    _ROOM_LAYOUT: "#4e96e2",
     MapSetType.VIRTUAL_WALLS: "#f00000",
     MapSetType.NO_MOP_ZONES: "#ffa500",
+    MapSetType.ROOMS: "#d63484",
 }
 _DEFAULT_MAP_BACKGROUND_COLOR = ImageColor.getrgb("#badaff")  # floor
 _MAP_BACKGROUND_COLORS: dict[int, tuple[int, ...]] = {
     0: ImageColor.getrgb("#000000"),  # unknown (will be transparent)
     1: _DEFAULT_MAP_BACKGROUND_COLOR,  # floor
-    2: ImageColor.getrgb("#4e96e2"),  # wall
+    2: ImageColor.getrgb("#B6CDF2"),  # sub wall
     3: ImageColor.getrgb("#1a81ed"),  # carpet
     4: ImageColor.getrgb("#dee9fb"),  # not scanned space
-    5: ImageColor.getrgb("#edf3fb"),  # possible obstacle
+    5: ImageColor.getrgb("#dee9fb"),  # possible obstacle
     # fallsback to _DEFAULT_MAP_BACKGROUND_COLOR for any other value
 }
 
@@ -266,6 +269,21 @@ def _calc_point(
     )
 
 
+def _calculate_room_center(points: list[Point]) -> Point:
+    # Find the minimum and maximum x and y coordinates
+    min_x = min(point.x for point in points)
+    max_x = max(point.x for point in points)
+    min_y = min(point.y for point in points)
+    max_y = max(point.y for point in points)
+
+    # Calculate the center of the room
+    center_x = (min_x + max_x) / 2
+    center_y = (min_y + max_y) / 2
+
+    # Return the center point
+    return Point(center_x, center_y)
+
+
 def _points_to_svg_path(
     points: Sequence[Point | TracePoint],
 ) -> list[svg.PathData]:
@@ -307,7 +325,33 @@ def _get_svg_positions(
     return svg_positions
 
 
-def _get_svg_subset(
+def _get_svg_subset_walls(
+    coordinates: str,
+    map_manipulation: MapManipulation,
+) -> svg.Polygon:
+    subset_coordinates: list[int] = ast.literal_eval(coordinates)
+
+    points = [
+        _calc_point(
+            subset_coordinates[i],
+            subset_coordinates[i + 1],
+            map_manipulation,
+        )
+        for i in range(0, len(subset_coordinates), 2)
+    ]
+
+    # For any other points count, return a polygon that should fit any required shape
+    return svg.Polygon(
+        fill="transparent",
+        stroke=_COLORS[_ROOM_LAYOUT],
+        stroke_width=3,
+        stroke_dasharray=[0],
+        vector_effect="non-scaling-stroke",
+        points=[num for p in points for num in p.flatten()],
+    )
+
+
+def _get_svg_subset_virt_border(
     subset: MapSubsetEvent,
     map_manipulation: MapManipulation,
 ) -> Path | svg.Polygon:
@@ -340,6 +384,42 @@ def _get_svg_subset(
         stroke_dasharray=[4],
         vector_effect="non-scaling-stroke",
         points=[num for p in points for num in p.flatten()],
+    )
+
+
+def _get_svg_subset_room_title(
+    subset: Room,
+    map_manipulation: MapManipulation,
+) -> svg.Text:
+    # replace ';' with ',' because for room v1 they are saved that way
+    subset_coordinates: list[int] = ast.literal_eval(
+        subset.coordinates.replace(";", ",")
+    )
+
+    points = [
+        _calc_point(
+            subset_coordinates[i],
+            subset_coordinates[i + 1],
+            map_manipulation,
+        )
+        for i in range(0, len(subset_coordinates), 2)
+    ]
+
+    # length for room v1 is need to calc the center
+    # for room v2 we only get the center
+    if len(points) > 1:
+        points = [_calculate_room_center(points)]
+
+    return svg.Text(
+        text=f"{subset.name} ({subset.id})",
+        x=points[0].x,
+        y=points[0].y,
+        font_size=4,
+        text_anchor="middle",
+        dominant_baseline="middle",
+        font_family="Arial",
+        fill=_COLORS[MapSetType.ROOMS],
+        vector_effect="non-scaling-stroke",
     )
 
 
@@ -403,6 +483,12 @@ class Map:
                 self._map_data.map_subsets[event.id] = event
 
         self._unsubscribers.append(event_bus.subscribe(MapSubsetEvent, on_map_subset))
+
+        async def on_map_info(event: MapInfoEvent) -> None:
+            if event.type == "0":
+                self._map_data.map_info[event.id] = event
+
+        self._unsubscribers.append(event_bus.subscribe(MapInfoEvent, on_map_info))
 
         self._unsubscribers.append(
             event_bus.add_on_subscription_callback(
@@ -595,14 +681,6 @@ class Map:
             )
         )
 
-        # Additional subsets (VirtualWalls and NoMopZones)
-        svg_map.elements.extend(
-            [
-                _get_svg_subset(subset, manipulation)
-                for subset in self._map_data.map_subsets.values()
-            ]
-        )
-
         # Traces (if any)
         if svg_traces_path := self._get_svg_traces_path(manipulation):
             svg_map.elements.append(
@@ -612,6 +690,30 @@ class Map:
                     transform=[svg.Scale(1, -1)],
                     elements=[svg_traces_path],
                 )
+            )
+
+        # Additional subsets (Rooms)
+        svg_map.elements.extend(
+            [
+                _get_svg_subset_room_title(subset, manipulation)
+                for subset in self._map_data.rooms.values()
+            ]
+        )
+
+        # Additional subsets (VirtualWalls and NoMopZones)
+        svg_map.elements.extend(
+            [
+                _get_svg_subset_virt_border(subset, manipulation)
+                for subset in self._map_data.map_subsets.values()
+            ]
+        )
+
+        for subset in self._map_data.map_info.values():
+            svg_map.elements.extend(
+                [
+                    _get_svg_subset_walls(coordinates, manipulation)
+                    for coordinates in subset.coordinates
+                ]
             )
 
         # Bot and Charge stations
@@ -704,6 +806,7 @@ class MapData:
             on_change, [MapPiece(on_change, i) for i in range(64)]
         )
         self._map_subsets: OnChangedDict[int, MapSubsetEvent] = OnChangedDict(on_change)
+        self._map_info: OnChangedDict[int, MapInfoEvent] = OnChangedDict(on_change)
         self._positions: OnChangedList[Position] = OnChangedList(on_change)
         self._rooms: OnChangedDict[int, Room] = OnChangedDict(on_change)
         self._trace_values: OnChangedList[TracePoint] = OnChangedList(on_change)
@@ -722,6 +825,11 @@ class MapData:
     def map_subsets(self) -> dict[int, MapSubsetEvent]:
         """Return map subsets."""
         return self._map_subsets
+
+    @property
+    def map_info(self) -> dict[int, MapInfoEvent]:
+        """Return map info."""
+        return self._map_info
 
     @property
     def positions(self) -> list[Position]:

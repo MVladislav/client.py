@@ -1,6 +1,7 @@
 """Maps commands."""
 from __future__ import annotations
 
+import ast
 import json
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
@@ -14,7 +15,7 @@ from deebot_client.events import (
     MapTraceEvent,
     MinorMapEvent,
 )
-from deebot_client.events.map import CachedMapInfoEvent
+from deebot_client.events.map import CachedMapInfoEvent, MapInfoEvent
 from deebot_client.message import HandlingResult, HandlingState, MessageBodyDataDict
 from deebot_client.util import decompress_7z_base64_data
 
@@ -30,6 +31,7 @@ class GetCachedMapInfo(JsonCommandWithMessageHandling, MessageBodyDataDict):
     name = "getCachedMapInfo"
     # version definition for using type of getMapSet v1 or v2
     _map_set_command: type[GetMapSet | GetMapSetV2]
+    _map_info_command: type[GetMapInfoV2] | None = None
 
     def __init__(
         self, args: dict[str, Any] | list[Any] | None = None, version: int = 1
@@ -39,6 +41,7 @@ class GetCachedMapInfo(JsonCommandWithMessageHandling, MessageBodyDataDict):
                 self._map_set_command = GetMapSet
             case 2:
                 self._map_set_command = GetMapSetV2
+                self._map_info_command = GetMapInfoV2
             case _:
                 error_wrong_version = f"version={version} is not supported"
                 raise ValueError(error_wrong_version)
@@ -74,14 +77,16 @@ class GetCachedMapInfo(JsonCommandWithMessageHandling, MessageBodyDataDict):
         """
         result = super()._handle_response(event_bus, response)
         if result.state == HandlingState.SUCCESS and result.args:
-            return CommandResult(
-                result.state,
-                result.args,
-                [
-                    self._map_set_command(result.args["map_id"], entry)
-                    for entry in MapSetType
-                ],
-            )
+            commands: list[Command] = [
+                self._map_set_command(result.args["map_id"], entry)
+                for entry in MapSetType
+            ]
+            if self._map_info_command is not None:
+                commands.extend(
+                    self._map_info_command(result.args["map_id"], entry)
+                    for entry in ["0"]
+                )
+            return CommandResult(result.state, result.args, commands)
 
         return result
 
@@ -445,6 +450,50 @@ class GetMinorMap(JsonCommandWithMessageHandling, MessageBodyDataDict):
         if data.get("type", "ol") == "ol":
             # onMinorMap sends no type, so fallback to "ol"
             event_bus.notify(MinorMapEvent(data["pieceIndex"], data["pieceValue"]))
+            return HandlingResult.success()
+
+        return HandlingResult.analyse()
+
+
+class GetMapInfoV2(JsonCommandWithMessageHandling, MessageBodyDataDict):
+    """Get map info v2 command."""
+
+    name = "getMapInfo_V2"
+
+    def __init__(
+        self,
+        mid: str,
+        type: str = "0",  # pylint: disable=redefined-builtin
+    ) -> None:
+        super().__init__({"mid": mid, "type": type})
+
+    @classmethod
+    def _handle_body_data_dict(
+        cls, event_bus: EventBus, data: dict[str, Any]
+    ) -> HandlingResult:
+        """Handle message->body->data and notify the correct event subscribers.
+
+        :return: A message response
+        """
+        if data.get("info"):
+            coordinates = ast.literal_eval(
+                decompress_7z_base64_data(data["info"]).decode()
+            )
+            coordinates = coordinates[0][1:]
+            coordinates = [
+                ",".join(
+                    [",".join(part.split(",")[0:2]) for part in item.split(";")[1:]]
+                )
+                for item in coordinates
+            ]
+
+            event_bus.notify(
+                MapInfoEvent(
+                    id=data["mid"],
+                    type=data["type"],
+                    coordinates=coordinates,
+                )
+            )
             return HandlingResult.success()
 
         return HandlingResult.analyse()
