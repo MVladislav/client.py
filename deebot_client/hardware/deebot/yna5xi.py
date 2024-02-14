@@ -66,6 +66,7 @@ from deebot_client.events import (
     MapChangedEvent,
     MapTraceEvent,
     MultimapStateEvent,
+    NetworkInfoEvent,
     PositionsEvent,
     ReportStatsEvent,
     RoomsEvent,
@@ -76,7 +77,6 @@ from deebot_client.events import (
     WaterAmount,
     WaterInfoEvent,
 )
-from deebot_client.events.network import NetworkInfoEvent
 from deebot_client.models import StaticDeviceInfo
 from deebot_client.util import short_name
 
